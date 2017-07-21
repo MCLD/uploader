@@ -1,0 +1,16 @@
+﻿{
+  "Jobs": [
+    {
+      "Name": "JobName",
+      "Path": "c:\\awesomefile.txt",
+      "Site": "ftp://localhost/awesomefile.zip",
+      "Username": "ftp",
+      "Password": "ftp",
+      "ZipBeforeUpload": "true",
+      "EmailTo": "person@whatever",
+      "EmailBcc": "manager@whatever",
+      "EmailSubject": "The file was uploaded!",
+      "EmailBody": "Upload successful!"
+    }
+  ]
+}
