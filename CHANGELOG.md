@@ -8,6 +8,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Windows console application for processing file upload jobs
 - Upload jobs configured via plain-text [JSON](http://www.json.org/) file
-- Ability to compress files before uploading ([ZIP](https://en.wikipedia.org/wiki/Zip_(file_format) compression)
+- Ability to compress files before uploading ([ZIP](https://en.wikipedia.org/wiki/Zip_(file_format)) compression)
 - Replacement of `{date}` in destination file name with date in `yyyy-MM-dd` format
 - Optional ability to send an email notification when a job is complete
