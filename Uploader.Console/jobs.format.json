@@ -7,6 +7,7 @@
       "Username": "ftp",
       "Password": "ftp",
       "ZipBeforeUpload": "true",
+      "DeleteSourceAfterUpload": "false",
       "EmailTo": "person@whatever",
       "EmailBcc": "manager@whatever",
       "EmailSubject": "The file was uploaded!",

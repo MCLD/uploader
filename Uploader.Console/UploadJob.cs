@@ -13,5 +13,6 @@
         public string EmailSubject { get; set; }
         public string EmailBody { get; set; }
         public bool ZipBeforeUpload { get; set; }
+        public bool DeleteSourceAfterUpload { get; set; }
     }
 }
