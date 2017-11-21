@@ -14,7 +14,7 @@ Windows console application (.NET 4.5) for handling periodic FTP uploads and opt
 - Mail server accepting SMTP connections (optional)
 
 # Initial setup
-- Build the application
+- Build the application or [download a release](https://github.com/MCLD/uploader/releases)
 - Configure the mail portion in the `Uploader.Console.exe.config` (optional)
 - Configure the desired job(s) in the `jobs.json` file (see below)
 - Copy the application to the place where you want it to run
@@ -33,6 +33,7 @@ Configure jobs by adding objects to `jobs.json` describing the upload jobs. The 
       "Username": "ftp",
       "Password": "ftp",
       "ZipBeforeUpload": "true",
+      "DeleteSourceAfterUpload": "false",
       "EmailTo": "person@whatever",
       "EmailBcc": "manager@whatever"
       "EmailSubject": "The file was uploaded!",
@@ -46,16 +47,17 @@ Configure jobs by adding objects to `jobs.json` describing the upload jobs. The 
 ```
 
 The following fields can be present in a Job description object:
-- `Name` - the name of the job - you run the job by calling `Uploader.Console.exe <name>` (with the above configuration, you'd run `Uploader.Console.exe JobName`)
-- `Path` - the full path to the file to upload, e.g. `c:\\awesomefile.txt` (backslashes must be escaped: type them twice)
+- `Name` - the name of the job (**case-sensitive**) - you run the job by calling `Uploader.Console.exe <name>` (with the above configuration, you'd run `Uploader.Console.exe JobName`)
+- `Path` - the full path to the file to upload, e.g. `c:\\awesomefile.txt` (backslashes must be escaped: type them twice). An asterisk (`*`) can be used to match partial file names - the upload will only be successful if there is a single file match.
 - `Site` - URL to upload the file to, e.g. `ftp://localhost/awesomefile.zip` - if the configuration line contains `{date}` it will be replaced with the current date in `yyyy-MM-dd` format
 - `Username` - optional - login to the FTP site
 - `Password` - optional - password to the ftp site
 - `ZipBeforeUpload` - optional - whether or not to zip the file before uploading it
+- `DeleteSourceAfterUpload` - optional - if true, delete the source file once it has s been uploaded
 - `EmailTo` - optional - who to send an email to once the file is uploaded
 - `EmailBcc` - optional - a person to blind CC on the email that the software sends
 - `EmailSubject` - optional - the subject of the email to send
-- `EmailBody` - optional - the body of the email to send
+- `EmailBody` - optional - the body of the email to send, if `EmailTo` and `EmailSubject` are supplied but `EmailBody` is not then just put the number of bytes uploaded in the body of the email.
 
 # Configuring Email
 Jobs can optionally be set to send email once they are complete. Email configuration is in the `Uploader.Console.exe.config` file:

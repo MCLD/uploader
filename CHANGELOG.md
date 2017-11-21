@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.1.0]
+### Added
+- Option to delete source file once uploaded
+- Handle multiple files matching a wildcard path
+
+### Changed
+- If no email body is supplied, send the number of bytes uploaded in the email.
+
 ## [1.0.0] - 2017-07-21
 ### Added
 - Windows console application for processing file upload jobs
