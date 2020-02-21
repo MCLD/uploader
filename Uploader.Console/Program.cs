@@ -1,15 +1,13 @@
-﻿using Serilog;
-using System;
-using System.Configuration;
+﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
+using Serilog;
 
 namespace Uploader.Console
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             using (var log = new LoggerConfiguration()
                 .ReadFrom.AppSettings()
@@ -18,25 +16,24 @@ namespace Uploader.Console
                 .Enrich.WithProperty("Identifier", Process.GetCurrentProcess().Id)
                 .CreateLogger())
             {
-                if (args.Count() == 0)
+                if (args.Length == 0)
                 {
-                    log.Fatal("Must supply one or more job names to perform upload.");
+                    log.Fatal("Must supply one or more job names to perform upload, see jobs.json.");
                     throw new ArgumentNullException();
                 }
                 else
                 {
-                    var settings = ConfigurationManager.AppSettings;
                     foreach (string arg in args)
                     {
                         log.Verbose("Processing {arg}...", arg);
-                        var uploader = new Uploader(log, settings);
+                        var uploader = new Uploader(log);
                         try
                         {
                             uploader.Process(arg);
                         }
                         catch (Exception ex)
                         {
-                            log.Fatal(ex, "Fatal exception");
+                            log.Fatal(ex, "Fatal exception: {ErrorMessage}", ex.Message);
                         }
                     }
                 }

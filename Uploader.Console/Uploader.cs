@@ -1,32 +1,28 @@
-﻿using Serilog;
-using System;
-using System.Collections.Specialized;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-using System.IO.Compression;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Uploader.Console
 {
     public class Uploader
     {
         private readonly ILogger _log;
-        private readonly NameValueCollection _config;
 
-        public Uploader(ILogger log, NameValueCollection config)
+        public Uploader(ILogger log)
         {
             _log = log ?? throw new ArgumentNullException(nameof(log));
-            _config = config ?? throw new ArgumentException(nameof(config));
         }
 
         public void Process(string jobName)
         {
-            var sw = new Stopwatch();
-            sw.Start();
+            long start = Stopwatch.GetTimestamp();
             try
             {
                 if (string.IsNullOrWhiteSpace(jobName))
@@ -36,31 +32,31 @@ namespace Uploader.Console
                 }
 
                 UploadJob job = null;
-                using (var configurationJsonFile = File.OpenText(@"jobs.json"))
+                using (var configurationJsonFile = File.OpenText("jobs.json"))
                 {
                     var serializer = new JsonSerializer();
                     var jobsFile = (JobsFile)serializer.Deserialize(configurationJsonFile,
                         typeof(JobsFile));
 
-                    if (jobsFile == null || jobsFile.Jobs.Count() == 0)
+                    if (jobsFile?.Jobs.Any() != true)
                     {
-                        _log.Error("Unable to read configuration file configuration.json");
+                        _log.Error("Unable to read configuration file: configuration.json");
                         throw new Exception("Unable to read configuration file configuration.json");
                     }
 
-                    job = jobsFile.Jobs.Where(_ => _.Name == jobName).SingleOrDefault();
+                    job = jobsFile.Jobs.SingleOrDefault(_ => _.Name == jobName);
                 }
 
                 if (job == null)
                 {
-                    _log.Error("Details for {jobName} could not be found.",
+                    _log.Error("Details not found for job: {JobName}",
                         jobName);
                     throw new Exception($"Unable to find upload details for job ${jobName}");
                 }
 
                 if (string.IsNullOrEmpty(job.Site))
                 {
-                    _log.Error("Site is not specified for job: {0}", job.Name);
+                    _log.Error("Site is not specified for job: {JobName}", job.Name);
                     return;
                 }
 
@@ -68,7 +64,7 @@ namespace Uploader.Console
                 {
                     if (!File.Exists(job.Path))
                     {
-                        _log.Error($"Could not find file to upload at: {job.Path}");
+                        _log.Error("Could not find file to upload at: {FilePath}", job.Path);
                         return;
                     }
                 }
@@ -80,17 +76,19 @@ namespace Uploader.Console
                         .Substring(job.Path.LastIndexOf(Path.DirectorySeparatorChar) + 1);
                     var files = Directory.GetFiles(directory, file);
 
-                    switch (files.Count())
+                    switch (files.Length)
                     {
                         case 0:
-                            _log.Error($"Could not find a file matching {job.Path}");
+                            _log.Error("Could not find a file matching: {FilePath}", job.Path);
                             return;
                         case 1:
-                            _log.Information($"Found match for {job.Path}: {files[0]}");
+                            _log.Information("Found match for: {FilePath}: {FileMatch}",
+                                job.Path,
+                                files[0]);
                             job.Path = files[0];
                             break;
                         default:
-                            _log.Error($"Found multiple files matching {job.Path}");
+                            _log.Error("Found multiple files matching: {FilePath}", job.Path);
                             return;
                     }
                 }
@@ -106,7 +104,7 @@ namespace Uploader.Console
                     if (job.ZipBeforeUpload)
                     {
                         tempFile = Path.GetTempFileName();
-                        _log.Debug($"Zipping to temporary file {tempFile}");
+                        _log.Debug("Zipping to temporary file: {TemporaryFile}", tempFile);
                         using (var fs = new FileStream(tempFile, FileMode.Create))
                         {
                             using (var archive = new ZipArchive(fs, ZipArchiveMode.Create))
@@ -118,10 +116,10 @@ namespace Uploader.Console
 
                         long zipped = new FileInfo(tempFile).Length;
 
-                        _log.Information("Zipped {0} from {1:n0}b to {2:n0}b into {3}",
+                        _log.Information("Zipped {FilePath} from {OriginalSize} b to {CompressedSize} b into {TemporaryFile}",
                             Path.GetFileName(job.Path),
-                            filesize,
-                            zipped,
+                            filesize.ToString("n0"),
+                            zipped.ToString("n0"),
                             tempFile);
                         job.Path = tempFile;
 
@@ -135,7 +133,7 @@ namespace Uploader.Console
                             if (!string.IsNullOrEmpty(job.Username)
                                 && !string.IsNullOrEmpty(job.Password))
                             {
-                                _log.Verbose($"Using username {job.Username}");
+                                _log.Verbose("Using username: {Username}", job.Username);
                                 client.Credentials
                                     = new NetworkCredential(job.Username, job.Password);
                             }
@@ -153,7 +151,8 @@ namespace Uploader.Console
                             responseText = Encoding.UTF8.GetString(response);
                             if (responseText.Length > 0)
                             {
-                                _log.Information($"Server response: {responseText}");
+                                _log.Information("Server response: {ServerResponse}",
+                                    responseText);
                             }
                             else
                             {
@@ -162,7 +161,7 @@ namespace Uploader.Console
 
                             if (job.DeleteSourceAfterUpload)
                             {
-                                _log.Information("Deleting original file {0} now that the upload has completed.",
+                                _log.Information("Deleting original file post-upload: {FilePath}",
                                     originalFile);
                                 try
                                 {
@@ -172,13 +171,13 @@ namespace Uploader.Console
                                     }
                                     else
                                     {
-                                        _log.Error("Could not find original file {0} to delete.",
+                                        _log.Error("Could not find original file to delete: {FilePath}",
                                             originalFile);
                                     }
                                 }
                                 catch (Exception ex)
                                 {
-                                    _log.Error("An error occurred deleting original file {0}: {1}",
+                                    _log.Error("An error occurred deleting original file {FilePath}: {ErrorMessage}",
                                         originalFile,
                                         ex.Message);
                                 }
@@ -187,14 +186,14 @@ namespace Uploader.Console
                     }
                     catch (Exception ex)
                     {
-                        _log.Error("Problem with upload: {0}", ex.Message);
+                        _log.Error(ex, "Problem with upload: {ErrorMessage}", ex.Message);
                     }
                 }
                 finally
                 {
                     if (!string.IsNullOrEmpty(tempFile) && File.Exists(tempFile))
                     {
-                        _log.Debug("Deleting temporary file {0}", tempFile);
+                        _log.Debug("Deleting temporary file: {TemporaryFile}", tempFile);
                         File.Delete(tempFile);
                     }
                 }
@@ -230,7 +229,8 @@ namespace Uploader.Console
                             }
                             catch (Exception ex)
                             {
-                                _log.Error(ex, "Sending mail for upload {0} failed: {1}",
+                                _log.Error(ex,
+                                    "Sending mail for upload {JobName} failed: {ErrorMessage}",
                                     job.Name,
                                     ex.Message);
                             }
@@ -240,14 +240,13 @@ namespace Uploader.Console
             }
             catch (Exception ex)
             {
-                _log.Fatal($"Fatal exception: {ex.Message}");
+                _log.Fatal(ex, "Fatal exception: {ErrorMessage}", ex.Message);
             }
             finally
             {
-                sw.Stop();
-                _log.Information("Finished processing {0} in {1:N2} seconds",
+                _log.Information("Finished processing {JobName} in {Elapsed} ms",
                     jobName,
-                    sw.Elapsed.TotalSeconds);
+                    (Stopwatch.GetTimestamp() - start) * 1000 / (double)Stopwatch.Frequency);
             }
         }
     }

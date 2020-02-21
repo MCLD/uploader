@@ -72,6 +72,29 @@ Jobs can optionally be set to send email once they are complete. Email configura
 </system.net>
 ```
 
+# Logging
+Console logging is on by default. Additional logging configurations can be set in `Uploader.Console.exe.config`:
+
+## SQL Server
+In `<appSettings>` add:
+
+```xml
+<add key="serilog:using:MSSqlSever" value="Serilog.Sinks.MSSqlServer"/>
+<add key="serilog:write-to:MSSqlServer.restrictedToMinimumLevel" value="Information"/>
+<add key="serilog:write-to:MSSqlServer.connectionString" value="[SQL Server connection string]"/>
+<add key="serilog:write-to:MSSqlServer.tableName" value="[SQL Server logging table name]"/>
+<add key="serilog:write-to:MSSqlServer.autoCreateSqlTable" value="true"/>
+```
+
+## Seq
+In `<appSettings>` add:
+
+```xml
+<add key="serilog:using:Seq" value="Serilog.Sinks.Seq" />
+<add key="serilog:write-to:Seq.serverUrl" value="[Seq logging endpoint]" />
+<add key="serilog:write-to:Seq.apiKey" value="[optional API key here]" />
+```
+
 # Dependencies
 - Newtonsoft.Json
 - Serilog
@@ -79,6 +102,7 @@ Jobs can optionally be set to send email once they are complete. Email configura
 - Serilog.Sinks.Console
 - Serilog.Sinks.Literate
 - Serilog.Sinks.PeriodicBatching
+- Serilog.Sinks.Seq
 
 # License
 Code released under the [MIT License](https://github.com/MCLD/uploader/blob/master/LICENSE).
